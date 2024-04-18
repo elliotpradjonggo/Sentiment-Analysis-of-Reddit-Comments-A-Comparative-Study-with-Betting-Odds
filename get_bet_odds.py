@@ -64,8 +64,9 @@ def extract_data(file_name):
                                                 raise Exception("Team not in the list")
                                             # draw_name = market_definition["runners"][2]["name"]
                                     elif 'rc' in json_content["mc"][0]:
-                                        change_time = datetime.datetime.fromtimestamp(json_content['pt'] / 1000.0)
-                                        time = change_time.strftime("%H:%M")
+                                        time = datetime.datetime.utcfromtimestamp(int(json_content['pt']) / 1000)
+                                        date = time.strftime("%Y-%m-%d")  # Format the date as YYYY-MM-DD
+                                        time_of_day = time.strftime("%H:%M:%S.%f")[:-3] 
                                         odd1 = -1
                                         odd2 = -1
                                         oddD = -1
@@ -76,7 +77,8 @@ def extract_data(file_name):
                                                 odd2 = rc_item["ltp"]
                                             elif rc_item["id"] == draw_id:
                                                 oddD = rc_item["ltp"]
-                                        match_odds.append({"time":time,
+                                        match_odds.append({"date": date,
+                                                           "time": time_of_day,
                                                            "team1": odd1,
                                                            "team2": odd2,
                                                            "draw": oddD
