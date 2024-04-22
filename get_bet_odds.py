@@ -6,25 +6,25 @@ import datetime
 
 teams = [
     "Arsenal",
-    "Aston Villa",
-    "Bournemouth",
-    "Brentford",
-    "Brighton",
+    # "Aston Villa",
+    # "Bournemouth",
+    # "Brentford",
+    # "Brighton",
     "Chelsea",
-    "Crystal Palace",
-    "Everton",
-    "Fulham",
-    "Leeds",
-    "Leicester",
+    # "Crystal Palace",
+    # "Everton",
+    # "Fulham",
+    # "Leeds",
+    # "Leicester",
     "Liverpool",
     "Man City",
     "Man Utd",
-    "Newcastle",
-    "Nottm Forest",
-    "Southampton",
+    # "Newcastle",
+    # "Nottm Forest",
+    # "Southampton",
     "Tottenham",
-    "West Ham",
-    "Wolves"
+    # "West Ham",
+    # "Wolves"
 ]
 
 
