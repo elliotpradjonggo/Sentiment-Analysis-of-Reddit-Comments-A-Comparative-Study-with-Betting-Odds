@@ -43,7 +43,7 @@ df['match_datetime'] = pd.to_datetime(df['match_date'] + ' ' + df['start_time'])
 df['odds_datetime'] = pd.to_datetime(df['odds_date'] + ' ' + df['odds_time'])
 
 # Filter out the odds that are not during the game or just before the game
-df = df[(df['odds_datetime'] >= df['match_datetime']) & (df['odds_datetime'] <= df['match_datetime'] + timedelta(minutes=90))]
+df = df[(df['odds_datetime'] >= df['match_datetime']) & (df['odds_datetime'] <= df['match_datetime'] + timedelta(minutes=105))]
 
 # Create a separate graph for each match
 for (match_date, team1_name, team2_name), match_df in df.groupby(['match_date', 'team1_name', 'team2_name']):
