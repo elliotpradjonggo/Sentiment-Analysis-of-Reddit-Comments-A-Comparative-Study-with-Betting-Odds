@@ -1,76 +1,47 @@
-import matplotlib.pyplot as plt
 import pandas as pd
-import json
-from datetime import timedelta
+import matplotlib.pyplot as plt
+from datetime import datetime
 
-# Assuming 'data' is your JSON data
-with open('output.json', 'r') as json_file:
-    # Load the JSON data
-    data = json.load(json_file)
+file_name = 'jakes_labelled\man_city_vs_chelsea.csv'
+# Load your csv file
+df = pd.read_csv(file_name)
 
-# Flatten the data
-flattened_data = []
-for match in data:
-    last_team1_odds = None
-    last_team2_odds = None
-    last_draw_odds = None
-    for odds in match['match_odds']:
-        team1_odds = odds['team1'] if odds['team1'] != -1 else last_team1_odds
-        team2_odds = odds['team2'] if odds['team2'] != -1 else last_team2_odds
-        draw_odds = odds['draw'] if odds['draw'] != -1 else last_draw_odds
-        flattened_data.append({
-            'match_date': match['match_date'],
-            'start_time': match['start_time'],
-            'team1_name': match['team1_name'],
-            'team2_name': match['team2_name'],
-            'odds_date': odds['date'],
-            'odds_time': odds['time'],
-            'team1_odds': team1_odds,
-            'team2_odds': team2_odds,
-            'draw_odds': draw_odds,
-        })
-        if team1_odds is not None:
-            last_team1_odds = team1_odds
-        if team2_odds is not None:
-            last_team2_odds = team2_odds
-        if draw_odds is not None:
-            last_draw_odds = draw_odds
+columns = df.columns
+team1 =  columns[2]
+team2 = columns[3]
 
-# Convert to DataFrame
-df = pd.DataFrame(flattened_data)
+df['time'] = pd.to_datetime(df['time'])
+df = df.sort_values('time')
+print(df)
+# Define the start time of the match
+match_date = "2023-05-21"
+start_time = "11:00:00"
+end_time = "13:00:00"
+match_start = datetime.strptime(f"{match_date} {start_time}", "%Y-%m-%d %H:%M:%S")
+match_end = datetime.strptime(f"{match_date} {end_time}", "%Y-%m-%d %H:%M:%S")
 
-df['match_datetime'] = pd.to_datetime(df['match_date'] + ' ' + df['start_time'])
-df['odds_datetime'] = pd.to_datetime(df['odds_date'] + ' ' + df['odds_time'])
+df = df[(df['time'] >= match_start)]
+df = df[df['time'] < match_end]
 
-# Filter out the odds that are not during the game or just before the game
-df = df[(df['odds_datetime'] >= df['match_datetime']) & (df['odds_datetime'] <= df['match_datetime'] + timedelta(minutes=105))]
+# Make sure your time column is in the correct datetime format
+df[team1] = pd.to_numeric(df[team1], errors='coerce').astype('Int64')
+df[team2] = pd.to_numeric(df[team2], errors='coerce').astype('Int64')
 
-# Resample the DataFrame to 5-minute intervals
-df.set_index('odds_datetime', inplace=True)
-df = df.resample('5T').first().reset_index()
+# Set the time column as the index of the dataframe
+df.set_index('time', inplace=True)
 
-import numpy as np
+df_resampled1 = df[team1].resample('5T').sum().fillna(0)
+df_resampled2 = df[team2].resample('5T').sum().fillna(0)
 
-# Continue with your existing code...
-df['team1_odds_change'] = np.sign(df['team1_odds'].pct_change())
-df['team2_odds_change'] = np.sign(df['team2_odds'].pct_change())
+# Plot the data with labels
+plt.plot(df_resampled1, label=team1)
+plt.plot(df_resampled2, label=team2)
 
-# Sum the changes for every 5 minutes interval
-df.set_index('odds_datetime', inplace=True)
-df['team1_odds_sum'] = df['team1_odds_change'].groupby(pd.Grouper(freq='5Min')).sum()
-df['team2_odds_sum'] = df['team2_odds_change'].groupby(pd.Grouper(freq='5Min')).sum()
-df.reset_index(inplace=True)
+plt.title(team1 + ' vs ' + team2 + ' ' +match_date)
+plt.xlabel('Time')
+plt.ylabel('Values')
 
-# Create a separate graph for each match
-for (match_date, team1_name, team2_name), match_df in df.groupby(['match_date', 'team1_name', 'team2_name']):
-    plt.figure(figsize=(10, 6))
-    plt.plot(match_df['odds_datetime'], match_df['team1_odds_sum'], label=team1_name)
-    plt.plot(match_df['odds_datetime'], match_df['team2_odds_sum'], label=team2_name)
-    title = f"Changes in odds for match on {match_date} between {team1_name} and {team2_name}"
-    plt.title(title)
-    plt.xlabel('Date and Time')
-    plt.ylabel('Sum of Changes in Odds')
-    plt.ylim(-10, 10)
-    plt.legend()
-    plt.savefig(title + '.png')  # Save the figure
+# Display the legend
+plt.legend()
 
+plt.show()
