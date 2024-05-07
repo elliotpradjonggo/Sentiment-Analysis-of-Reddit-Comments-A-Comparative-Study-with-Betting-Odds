@@ -46,20 +46,18 @@ df['odds_datetime'] = pd.to_datetime(df['odds_date'] + ' ' + df['odds_time'])
 df = df[(df['odds_datetime'] >= df['match_datetime']) & (df['odds_datetime'] <= df['match_datetime'] + timedelta(minutes=105))]
 
 # Resample the DataFrame to 5-minute intervals
-df.set_index('odds_datetime', inplace=True)
-df = df.resample('5T').first().reset_index()
+# df.set_index('odds_datetime', inplace=True)
+# df = df.resample('5T').first().reset_index()
 
 # Continue with your existing code...
 df['team1_odds_change'] = df['team1_odds'].pct_change()
 df['team2_odds_change'] = df['team2_odds'].pct_change()
-# df['draw_odds_change'] = df['draw_odds'].pct_change()
 
 # Create a separate graph for each match
 for (match_date, team1_name, team2_name), match_df in df.groupby(['match_date', 'team1_name', 'team2_name']):
     plt.figure(figsize=(10, 6))
     plt.plot(match_df['odds_datetime'], match_df['team1_odds_change'], label=team1_name)
     plt.plot(match_df['odds_datetime'], match_df['team2_odds_change'], label=team2_name)
-    # plt.plot(match_df['odds_datetime'], match_df['draw_odds_change'], label='Draw')
     title = f"Scaled changes in odds for match on {match_date} between {team1_name} and {team2_name}"
     plt.title(title)
     plt.xlabel('Date and Time')
