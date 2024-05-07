@@ -1,0 +1,70 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import json
+from datetime import timedelta
+
+# Assuming 'data' is your JSON data
+with open('output.json', 'r') as json_file:
+    # Load the JSON data
+    data = json.load(json_file)
+
+# Flatten the data
+flattened_data = []
+for match in data:
+    last_team1_odds = None
+    last_team2_odds = None
+    last_draw_odds = None
+    for odds in match['match_odds']:
+        team1_odds = odds['team1'] if odds['team1'] != -1 else last_team1_odds
+        team2_odds = odds['team2'] if odds['team2'] != -1 else last_team2_odds
+        draw_odds = odds['draw'] if odds['draw'] != -1 else last_draw_odds
+        flattened_data.append({
+            'match_date': match['match_date'],
+            'start_time': match['start_time'],
+            'team1_name': match['team1_name'],
+            'team2_name': match['team2_name'],
+            'odds_date': odds['date'],
+            'odds_time': odds['time'],
+            'team1_odds': team1_odds,
+            'team2_odds': team2_odds,
+            'draw_odds': draw_odds,
+        })
+        if team1_odds is not None:
+            last_team1_odds = team1_odds
+        if team2_odds is not None:
+            last_team2_odds = team2_odds
+        if draw_odds is not None:
+            last_draw_odds = draw_odds
+
+# Convert to DataFrame
+df = pd.DataFrame(flattened_data)
+
+df['match_datetime'] = pd.to_datetime(df['match_date'] + ' ' + df['start_time'])
+df['odds_datetime'] = pd.to_datetime(df['odds_date'] + ' ' + df['odds_time'])
+
+# Filter out the odds that are not during the game or just before the game
+df = df[(df['odds_datetime'] >= df['match_datetime']) & (df['odds_datetime'] <= df['match_datetime'] + timedelta(minutes=105))]
+
+# Resample the DataFrame to 5-minute intervals
+df.set_index('odds_datetime', inplace=True)
+df = df.resample('5T').first().reset_index()
+
+# Continue with your existing code...
+df['team1_odds_change'] = df['team1_odds'].pct_change()
+df['team2_odds_change'] = df['team2_odds'].pct_change()
+# df['draw_odds_change'] = df['draw_odds'].pct_change()
+
+# Create a separate graph for each match
+for (match_date, team1_name, team2_name), match_df in df.groupby(['match_date', 'team1_name', 'team2_name']):
+    plt.figure(figsize=(10, 6))
+    plt.plot(match_df['odds_datetime'], match_df['team1_odds_change'], label=team1_name)
+    plt.plot(match_df['odds_datetime'], match_df['team2_odds_change'], label=team2_name)
+    # plt.plot(match_df['odds_datetime'], match_df['draw_odds_change'], label='Draw')
+    title = f"Scaled changes in odds for match on {match_date} between {team1_name} and {team2_name}"
+    plt.title(title)
+    plt.xlabel('Date and Time')
+    plt.ylabel('Scaled Change in Odds')
+    plt.ylim(-1, 1)
+    plt.legend()
+    plt.savefig(title + '.png')  # Save the figure
+
